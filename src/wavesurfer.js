@@ -1361,9 +1361,10 @@ export default class WaveSurfer extends util.Observer {
         }
 
         this.drawBuffer();
-        this.drawer.progress(this.backend.getPlayedPercents());
-
-        this.drawer.recenter(this.getCurrentTime() / this.getDuration());
+        if (!this.drawer.optimiseZoom) {
+            this.drawer.progress(this.backend.getPlayedPercents());
+            this.drawer.recenter(this.getCurrentTime() / this.getDuration());
+        }
         this.fireEvent('zoom', pxPerSec);
     }
 

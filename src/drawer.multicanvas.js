@@ -659,6 +659,7 @@ export default class MultiCanvas extends Drawer {
      * @param {Number} progress Value between 0 and 1 for wave progress
      */
     stretchCanvases(desiredWidth, progress) {
+        let oldCanvasWidth = Math.round(this.width / this.params.pixelRatio);
         if (!this.optimiseZoom) {
             //Enable optimsed zooming
             this.optimiseZoom = true;
@@ -673,7 +674,7 @@ export default class MultiCanvas extends Drawer {
         //Update progress
         let progressPos = progress * totalCanvasWidth;
         this.updateProgress(progressPos);
-        this.recenterOnPosition(progressPos, true);
+        this.priorityRecenter(progress, oldCanvasWidth);
     }
 
     /**
@@ -683,5 +684,38 @@ export default class MultiCanvas extends Drawer {
      */
     updateProgress(position) {
         this.style(this.progressWave, { width: position + 'px' });
+    }
+
+    /**
+     * Recenter on the progress position if it is within view, otherwise
+     * recenter on middle of viewport.
+     * Smoothly transitions from view to progress while zooming out
+     *
+     * @param {Number} progress value between 0 and 1 for progress
+     * @param {Number} oldWidth Improves location of progress while zooming, optional
+     */
+    priorityRecenter(progress, oldWidth = null) {
+        let newWidth = Math.round(this.width / this.params.pixelRatio);
+        if (oldWidth == null) {
+            oldWidth = newWidth;
+        }
+        let progressPos = progress * oldWidth;
+        let view = [this.wrapper.scrollLeft, this.wrapper.scrollLeft + this.wrapper.clientWidth];
+        let currentPos = newWidth / oldWidth * (view[0] + view[1]) / 2;
+
+        if (progressPos > view[0] && progressPos < view[1]) {
+            //Recenter to progress position
+            if (oldWidth > newWidth) {
+                //Zooming out, if progress enters the view make it look nice
+                let distance = progress * newWidth - currentPos;
+                this.recenterOnPosition(progress * newWidth - (distance / 1.1), true);
+            } else {
+                //Zooming in
+                this.recenterOnPosition(progress * newWidth, true);
+            }
+        } else {
+            //Recenter on middle of viewport
+            this.recenterOnPosition(currentPos, true);
+        }
     }
 }
